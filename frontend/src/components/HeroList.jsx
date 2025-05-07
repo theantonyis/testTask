@@ -1,24 +1,21 @@
 import React, { useState } from "react";
 import { Eye, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
-function HeroList({ onEdit, onDelete, onView }) {
+function HeroList({ heroes = [], onEdit, onDelete, onView }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
     // Pagination logic
     const indexOfLastHero = currentPage * itemsPerPage;
     const indexOfFirstHero = indexOfLastHero - itemsPerPage;
-    const currentHeroes = displayHeroes.slice(indexOfFirstHero, indexOfLastHero);
+    const currentHeroes = heroes.slice(indexOfFirstHero, indexOfLastHero);
 
-    const totalPages = Math.ceil(displayHeroes.length / itemsPerPage);
+    const totalPages = Math.ceil(heroes.length / itemsPerPage);
 
-    // Function to handle hero viewing (you'll need to implement onView in App.js)
     const handleView = (hero) => {
         if (typeof onView === 'function') {
             onView(hero);
         } else {
-            console.log("View details for:", hero);
-            // Fallback if onView not provided
             alert(`Hero Details: ${hero.nickname} (${hero.real_name})`);
         }
     };
@@ -35,7 +32,7 @@ function HeroList({ onEdit, onDelete, onView }) {
                                     alt={hero.nickname}
                                     className="w-full h-full object-cover"
                                 />
-                            ) : hero.images && hero.images.length > 0 ? (
+                            ) : hero.images?.length > 0 ? (
                                 <img
                                     src={hero.images[0]}
                                     alt={hero.nickname}
@@ -64,7 +61,7 @@ function HeroList({ onEdit, onDelete, onView }) {
                                     <Eye size={18} />
                                 </button>
                                 <button
-                                    onClick={() => onEdit(hero)}
+                                    onClick={() => onEdit?.(hero)}
                                     className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
                                     title="Edit hero"
                                 >
@@ -73,7 +70,7 @@ function HeroList({ onEdit, onDelete, onView }) {
                                 <button
                                     onClick={() => {
                                         if (window.confirm(`Are you sure you want to delete ${hero.nickname}?`)) {
-                                            onDelete(hero.id);
+                                            onDelete?.(hero.id);
                                         }
                                     }}
                                     className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
@@ -86,7 +83,7 @@ function HeroList({ onEdit, onDelete, onView }) {
                     </div>
                 ))}
 
-                {displayHeroes.length === 0 && (
+                {heroes.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                         No superheroes found. Add your first hero!
                     </div>

@@ -44,12 +44,17 @@ function App() {
     const handleEdit = async (hero) => {
         try {
             const res = await axios.get(`${API}/superheroes/${hero.id}`);
-            setViewState("form", { editingId: hero.id, scrollToTop: true });
+            setViewState("form", {
+                editingId: hero.id,
+                viewingHero: res.data, // 🟢 pass the fetched hero data
+                scrollToTop: true
+            });
         } catch (err) {
             console.error("Failed to fetch hero data:", err);
             alert("Failed to load hero data. Please try again.");
         }
     };
+
 
     const handleView = (hero) => {
         setViewState("detail", { viewingHero: hero, scrollToTop: true });
@@ -98,6 +103,7 @@ function App() {
                     setEditingId={setEditingId}
                     initialData={viewingHero}
                     onBack={handleBack} // Provide onBack handler for form view
+                    onSuccess={() => setView("list")}
                 />
             );
         }
