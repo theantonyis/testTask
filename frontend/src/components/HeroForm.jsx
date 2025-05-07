@@ -17,8 +17,10 @@ function HeroForm({ fetchHeroes, editingId, setEditingId, initialData = {} }) {
 
     // Reset form when editingId changes or initialData updates
     useEffect(() => {
+        console.log("Editing ID:", editingId);
+        console.log("Initial Data:", initialData);
+
         if (editingId && initialData) {
-            console.log("Setting form data from initialData:", initialData);
             setFormData({
                 nickname: initialData.nickname || "",
                 real_name: initialData.real_name || "",
@@ -29,12 +31,10 @@ function HeroForm({ fetchHeroes, editingId, setEditingId, initialData = {} }) {
                 catch_phrase: initialData.catch_phrase || "",
             });
 
-            // If we have initialData.images, set preview
             if (initialData.images && initialData.images.length > 0) {
                 setPreview(initialData.images[0]);
             }
         } else {
-            // Reset form when not editing
             setFormData({
                 nickname: "",
                 real_name: "",
@@ -88,11 +88,11 @@ function HeroForm({ fetchHeroes, editingId, setEditingId, initialData = {} }) {
                 form.append(key, formData[key]);
             });
 
-            // Append multiple images if available
-            images.forEach((img) => {
-                console.log(`Appending image: ${img.name}`);
-                form.append("images", img);
-            });
+            // Append single image if available
+            if (images.length > 0) {
+                console.log(`Appending image: ${images[0].name}`);
+                form.append("image", images[0]);
+            }
 
             let response;
             if (editingId) {
@@ -211,7 +211,7 @@ function HeroForm({ fetchHeroes, editingId, setEditingId, initialData = {} }) {
                     <div className="mt-4">
                         <label className="block text-gray-700 text-sm font-medium mb-2">Superhero Images</label>
                         <div className="flex items-center justify-center w-full">
-                            <div className="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:bg-gray-50 hover:border-blue-500 cursor-pointer">
+                            <label htmlFor="hero-image-upload" className="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:bg-gray-50 hover:border-blue-500 cursor-pointer">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                     <ImagePlus className="text-gray-400 mb-2" size={24} />
                                     <p className="text-sm text-gray-500">
@@ -220,8 +220,14 @@ function HeroForm({ fetchHeroes, editingId, setEditingId, initialData = {} }) {
                                             : "Click to browse images"}
                                     </p>
                                 </div>
-                                {/* Note: In a real implementation, you would need a custom way to handle file input */}
-                            </div>
+                                <input
+                                    id="hero-image-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleImageChange}
+                                />
+                            </label>
                         </div>
                     </div>
 

@@ -31,16 +31,28 @@ function App() {
         }
     };
 
-    const handleEdit = (hero) => {
-        setEditingId(hero.id);
-        setView("form");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Centralized function to manage view transitions
+    const setViewState = (newView, options = {}) => {
+        setView(newView);
+        setEditingId(options.editingId || null);
+        setViewingHero(options.viewingHero || null);
+        if (options.scrollToTop) {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const handleEdit = async (hero) => {
+        try {
+            const res = await axios.get(`${API}/superheroes/${hero.id}`);
+            setViewState("form", { editingId: hero.id, scrollToTop: true });
+        } catch (err) {
+            console.error("Failed to fetch hero data:", err);
+            alert("Failed to load hero data. Please try again.");
+        }
     };
 
     const handleView = (hero) => {
-        setViewingHero(hero);
-        setView("detail");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setViewState("detail", { viewingHero: hero, scrollToTop: true });
     };
 
     const handleDelete = async (id) => {
@@ -56,15 +68,11 @@ function App() {
     };
 
     const handleAddNew = () => {
-        setEditingId(null);
-        setView("form");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setViewState("form", { scrollToTop: true });
     };
 
     const handleBack = () => {
-        setView("list");
-        setEditingId(null);
-        setViewingHero(null);
+        setViewState("list");
     };
 
     useEffect(() => {
@@ -73,9 +81,7 @@ function App() {
 
     // When editing is cancelled, go back to list view
     useEffect(() => {
-        if (editingId === null && view === "form") {
-            setView("list");
-        }
+
     }, [editingId, view]);
 
     // Render different views based on state
@@ -84,13 +90,14 @@ function App() {
             return <HeroDetail hero={viewingHero} onBack={handleBack} onEdit={() => handleEdit(viewingHero)} />;
         }
 
-        if (view === "form" || editingId) {
+        if (view === "form") { // Ensure form view is rendered when view is "form"
             return (
                 <HeroForm
                     fetchHeroes={fetchHeroes}
                     editingId={editingId}
                     setEditingId={setEditingId}
-                    initialData={heroes.find((hero) => hero.id === editingId)}
+                    initialData={viewingHero}
+                    onBack={handleBack} // Provide onBack handler for form view
                 />
             );
         }
