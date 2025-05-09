@@ -48,6 +48,8 @@ exports.createSuperhero = (req, res) => {
         function (err) {
             if (err) return res.status(500).json({ error: err.message });
             const id = this.lastID;
+
+            // Handle multiple image uploads
             const files = req.files || [];
             files.forEach(file => {
                 db.run(`INSERT INTO images (superhero_id, path) VALUES (?, ?)`, [id, file.filename]);
@@ -59,31 +61,68 @@ exports.createSuperhero = (req, res) => {
 
 exports.updateSuperhero = (req, res) => {
     const id = req.params.id;
-    const { nickname, real_name, origin_description, superpowers, catch_phrase } = req.body;
-    db.run(
-        `UPDATE superheroes SET nickname = ?, real_name = ?, origin_description = ?, superpowers = ?, catch_phrase = ? WHERE id = ?`,
-        [nickname, real_name, origin_description, superpowers, catch_phrase, id],
-        (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            const files = req.files || [];
-            files.forEach(file => {
-                db.run(`INSERT INTO images (superhero_id, path) VALUES (?, ?)`, [id, file.filename]);
-            });
-            res.json({ message: 'Updated' });
-        }
-    );
+    const {
+        nickname,
+        real_name,
+        origin_description,
+        superpowers,
+        catch_phrase,
+        existingImages = [] // Default to empty array if not provided
+    } = req.body;
+
+    // Ensure existingImages is an array
+    const existingFilenames = Array.isArray(existingImages) ? existingImages.map(url => path.basename(url)) : [];
+
+    db.serialize(() => {
+        // Update superhero info
+        db.run(
+            `UPDATE superheroes SET nickname = ?, real_name = ?, origin_description = ?, superpowers = ?, catch_phrase = ? WHERE id = ?`,
+            [nickname, real_name, origin_description, superpowers, catch_phrase, id],
+            (err) => {
+                if (err) return res.status(500).json({ error: err.message });
+
+                // Get all current image filenames in DB for this hero
+                db.all(`SELECT path FROM images WHERE superhero_id = ?`, [id], (err, rows) => {
+                    if (err) return res.status(500).json({ error: err.message });
+
+                    const currentFilenames = rows.map(row => row.path);
+                    const imagesToDelete = currentFilenames.filter(filename => !existingFilenames.includes(filename));
+
+                    // Delete files from filesystem and DB
+                    imagesToDelete.forEach(filename => {
+                        const filePath = path.join(__dirname, '../uploads', filename);
+                        if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Delete image file from disk
+                        db.run(`DELETE FROM images WHERE superhero_id = ? AND path = ?`, [id, filename]); // Delete image record from DB
+                    });
+
+                    // Add new uploaded images
+                    const files = req.files || [];
+                    files.forEach(file => {
+                        db.run(`INSERT INTO images (superhero_id, path) VALUES (?, ?)`, [id, file.filename]);
+                    });
+
+                    res.json({ message: 'Updated superhero with new images' });
+                });
+            }
+        );
+    });
 };
 
 exports.deleteSuperhero = (req, res) => {
     const id = req.params.id;
     db.all(`SELECT path FROM images WHERE superhero_id = ?`, [id], (err, images) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        // Delete files from filesystem
         images.forEach(img => {
             const filePath = path.join(__dirname, '../uploads', img.path);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Delete image file from disk
         });
+
+        // Delete superhero from DB
         db.run(`DELETE FROM superheroes WHERE id = ?`, [id], function (err) {
             if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: 'Deleted' });
+            res.json({ message: 'Superhero deleted' });
         });
     });
 };

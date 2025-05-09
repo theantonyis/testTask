@@ -26,7 +26,13 @@ function HeroForm({ edit }) {
                 .then(res => {
                     const { nickname, real_name, origin_description, superpowers, catch_phrase, images } = res.data;
                     setForm({ nickname, real_name, origin_description, superpowers, catch_phrase });
-                    setExistingImages(images || []);
+
+                    // Ensure images is an array
+                    if (Array.isArray(images)) {
+                        setExistingImages(images);
+                    } else {
+                        setExistingImages([]); // or set it to a default value if images is not an array
+                    }
                 })
                 .catch(err => {
                     console.error('Error fetching hero data:', err);
@@ -35,7 +41,6 @@ function HeroForm({ edit }) {
                 .finally(() => setLoading(false));
         }
     }, [edit, id]);
-
 
     const handleChange = e => {
         const { name, value } = e.target;
@@ -49,11 +54,11 @@ function HeroForm({ edit }) {
 
     const handleFileChange = e => {
         const selectedFiles = Array.from(e.target.files);
-        setFiles(selectedFiles);
+        setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
 
-        // Create preview URLs
+        // Create preview URLs for the new files
         const previews = selectedFiles.map(file => URL.createObjectURL(file));
-        setPreviewImages(previews);
+        setPreviewImages(prevPreviews => [...prevPreviews, ...previews]);
     };
 
     const validateForm = () => {
@@ -77,10 +82,14 @@ function HeroForm({ edit }) {
         Object.entries(form).forEach(([k, v]) => formData.append(k, v));
         for (let f of files) formData.append('images', f);
 
+        if (edit) {
+            formData.append('existingImages', JSON.stringify(existingImages));
+        }
+
         try {
             const method = edit ? api.put : api.post;
             const endpoint = edit ? `/superheroes/${id}` : '/superheroes';
-            await method(endpoint, formData);
+            const response = await method(endpoint, formData);
 
             // Clean up preview image URLs
             previewImages.forEach(URL.revokeObjectURL);
@@ -230,24 +239,26 @@ function HeroForm({ edit }) {
                             {existingImages.map((imgUrl, idx) => (
                                 <div key={idx} className="relative">
                                     <img
-                                        src={imgUrl}
+                                        src={`http://localhost:5000${imgUrl}`} // Ensure imgUrl contains correct path like '/uploads/hero-image.jpg'
                                         alt={`Existing ${idx + 1}`}
-                                        className="h-24 w-full object-cover rounded-md"
+                                        className="h-48 w-full object-cover rounded-md"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => {
                                             setExistingImages(prev => prev.filter((_, i) => i !== idx));
                                         }}
-                                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center"
                                     >
-                                        <XCircle size={16} />
+                                        <XCircle size={20} />
                                     </button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
+
+                {/* Image Previews */}
                 {previewImages.length > 0 && (
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
@@ -257,18 +268,17 @@ function HeroForm({ edit }) {
                                     <img
                                         src={preview}
                                         alt={`Preview ${idx + 1}`}
-                                        className="h-24 w-full object-cover rounded-md"
+                                        className="h-48 w-full object-cover rounded-md"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            URL.revokeObjectURL(preview);
                                             setPreviewImages(prev => prev.filter((_, i) => i !== idx));
                                             setFiles(prev => prev.filter((_, i) => i !== idx));
                                         }}
-                                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center"
                                     >
-                                        <XCircle size={16} />
+                                        <XCircle size={20} />
                                     </button>
                                 </div>
                             ))}
@@ -276,28 +286,16 @@ function HeroForm({ edit }) {
                     </div>
                 )}
 
-                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <Link
-                        to="/"
-                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
-                    >
-                        Cancel
-                    </Link>
+                <div className="flex justify-end mt-6">
                     <button
                         type="submit"
-                        className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all flex items-center"
+                        className="inline-flex items-center px-6 py-3 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         disabled={submitting}
                     >
                         {submitting ? (
-                            <>
-                                <Loader className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
-                                {edit ? 'Updating...' : 'Creating...'}
-                            </>
+                            <Loader className="h-5 w-5 animate-spin" />
                         ) : (
-                            <>
-                                <Check className="h-5 w-5 mr-2" />
-                                {edit ? 'Update Superhero' : 'Create Superhero'}
-                            </>
+                            <span>{edit ? 'Update Hero' : 'Create Hero'}</span>
                         )}
                     </button>
                 </div>
