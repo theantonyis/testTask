@@ -1,142 +1,194 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, Edit, Trash2, ImageOff, Loader } from 'lucide-react';
+import api from '../api/axios';
 
-function HeroDetail({ hero, onBack, onEdit }) {
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+function HeroDetail() {
+    const { id } = useParams();
+    const [hero, setHero] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState('');
+    const navigate = useNavigate();
 
-    if (!hero) {
+    useEffect(() => {
+        setLoading(true);
+        api.get(`/superheroes/${id}`)
+            .then(res => setHero(res.data))
+            .catch(err => console.error('Error fetching hero details:', err))
+            .finally(() => setLoading(false));
+    }, [id]);
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        try {
+            await api.delete(`/superheroes/${id}`);
+            navigate('/', { state: { message: 'Hero successfully deleted' } });
+        } catch (error) {
+            console.error('Error during deletion:', error);
+            setDeleting(false);
+            setShowConfirmation(false);
+        }
+    };
+
+    const handleImageClick = (src) => {
+        setSelectedImage(src);
+        setShowImageModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowImageModal(false);
+        setSelectedImage('');
+    };
+
+    if (loading) {
         return (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-                <p className="text-center text-gray-500">No hero selected</p>
+            <div className="max-w-4xl mx-auto p-6 flex justify-center items-center h-64">
+                <Loader className="h-12 w-12 text-blue-500 animate-spin" />
             </div>
         );
     }
 
-    const { nickname, real_name, origin_description, superpowers, catch_phrase, images = [] } = hero;
-
-    const nextImage = () => {
-        if (images.length > 1) {
-            setCurrentImageIndex((prev) => (prev + 1) % images.length);
-        }
-    };
-
-    const prevImage = () => {
-        if (images.length > 1) {
-            setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-        }
-    };
+    if (!hero) {
+        return (
+            <div className="max-w-4xl mx-auto p-6 bg-red-50 rounded-lg shadow text-center">
+                <h2 className="text-2xl font-bold text-red-700 mb-2">Hero Not Found</h2>
+                <p className="mb-4">The requested superhero could not be found.</p>
+                <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors">
+                    Return to Heroes List
+                </Link>
+            </div>
+        );
+    }
 
     return (
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            {/* Hero header with main info */}
-            <div className="p-6 bg-blue-600 text-white">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold">{nickname}</h1>
-                    <button
-                        onClick={() => onEdit(hero)}
-                        className="bg-white text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                        <Edit size={18} /> Edit Hero
-                    </button>
-                </div>
-                <p className="text-blue-100 mt-2">Real Name: {real_name}</p>
+        <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+            <div className="flex items-center mb-6">
+                <Link to="/" className="mr-4 text-blue-600 hover:text-blue-800 flex items-center">
+                    <ChevronLeft className="h-5 w-5 mr-1" />
+                    Back to List
+                </Link>
             </div>
 
-            <div className="p-6">
-                {/* Image gallery */}
-                {images && images.length > 0 && (
-                    <div className="mb-8">
-                        <div className="relative h-64 md:h-96 bg-gray-100 rounded-lg overflow-hidden">
-                            <img
-                                src={images[currentImageIndex]}
-                                alt={nickname}
-                                className="w-full h-full object-contain"
-                            />
-                            {images.length > 1 && (
-                                <>
-                                    <button
-                                        onClick={prevImage}
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
-                                    >
-                                        <ChevronLeft size={24} />
-                                    </button>
-                                    <button
-                                        onClick={nextImage}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
-                                    >
-                                        <ChevronRight size={24} />
-                                    </button>
-                                </>
-                            )}
-                            {/* Image counter */}
-                            {images.length > 1 && (
-                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                                    {currentImageIndex + 1} / {images.length}
-                                </div>
-                            )}
-                        </div>
-                        {/* Thumbnail gallery for multiple images */}
-                        {images.length > 1 && (
-                            <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
-                                {images.map((img, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`w-16 h-16 rounded border-2 cursor-pointer flex-shrink-0 ${
-                                            idx === currentImageIndex ? 'border-blue-600' : 'border-gray-200'
-                                        }`}
-                                        onClick={() => setCurrentImageIndex(idx)}
-                                    >
-                                        <img src={img} alt={`${nickname} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                                    </div>
-                                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <div className="bg-blue-50 p-6 rounded-lg shadow-inner mb-6">
+                        <h1 className="text-3xl font-bold text-blue-800 flex-grow mb-3">{hero.nickname}</h1>
+                        <h2 className="text-xl font-semibold text-blue-700 border-b border-blue-200 pb-2 mb-4">Hero Details</h2>
+
+                        <div className="space-y-3">
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-500">Real Name</h3>
+                                <p className="text-lg">{hero.real_name || 'Unknown'}</p>
                             </div>
-                        )}
-                    </div>
-                )}
 
-                {/* Hero details */}
-                <div className="grid gap-6">
-                    {/* Origin */}
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">Origin</h2>
-                        <p className="text-gray-600">{origin_description}</p>
-                    </div>
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-500">Origin</h3>
+                                <p className="text-base">{hero.origin_description || 'Unknown'}</p>
+                            </div>
 
-                    {/* Superpowers */}
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">Superpowers</h2>
-                        {Array.isArray(superpowers) && superpowers.length > 0 ? (
-                            <ul className="list-disc pl-5 text-gray-600 grid gap-1">
-                                {superpowers.map((power, idx) => (
-                                    <li key={idx}>{power}</li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-gray-600">{superpowers || "No superpowers listed"}</p>
-                        )}
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-500">Superpowers</h3>
+                                <p className="text-base">{hero.superpowers || 'None'}</p>
+                            </div>
+
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-500">Catch Phrase</h3>
+                                <p className="text-base italic">"{hero.catch_phrase || 'None'}"</p>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Catch phrase */}
-                    {catch_phrase && (
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-800 mb-2">Catch Phrase</h2>
-                            <blockquote className="italic text-gray-600 border-l-4 border-blue-400 pl-4 py-2">
-                                "{catch_phrase}"
-                            </blockquote>
+                    <div className="flex space-x-3">
+                        <Link
+                            to={`/edit/${hero.id}`}
+                            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-medium px-4 py-2.5 rounded-lg flex justify-center items-center transition-colors shadow-md"
+                        >
+                            <Edit className="h-5 w-5 mr-2" />
+                            Edit Hero
+                        </Link>
+                        <button
+                            onClick={() => setShowConfirmation(true)}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2.5 rounded-lg flex justify-center items-center transition-colors shadow-md"
+                            disabled={deleting}
+                        >
+                            <Trash2 className="h-5 w-5 mr-2" />
+                            {deleting ? 'Deleting...' : 'Delete Hero'}
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 className="text-xl font-semibold text-blue-700 mb-4">Hero Images</h2>
+                    {hero.images && hero.images.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            {hero.images.map((src, i) => (
+                                <div
+                                    key={i}
+                                    className="overflow-hidden rounded-lg shadow-md border border-gray-200 bg-gray-100"
+                                    onClick={() => handleImageClick(src)}
+                                >
+                                    <img
+                                        src={`http://localhost:5000${src}`}
+                                        alt={hero.nickname}
+                                        className="w-full h-auto max-h-64 object-contain rounded-lg transition-transform duration-300 hover:scale-105 cursor-pointer"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-gray-100 border border-gray-200 rounded-lg p-8 text-center">
+                            <ImageOff className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                            <p className="text-gray-600">No images available</p>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Footer with back button */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <button
-                    onClick={onBack}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                    <ChevronLeft size={18} /> Back to Heroes
-                </button>
-            </div>
+            {showConfirmation && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Confirmation</h3>
+                        <p className="mb-4 text-gray-600">Are you sure you want to delete <span className="font-semibold">{hero.nickname}</span>? This action cannot be undone.</p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={() => setShowConfirmation(false)}
+                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg"
+                                disabled={deleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                                disabled={deleting}
+                            >
+                                {deleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showImageModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="relative p-4 bg-white rounded-lg max-w-lg w-full">
+                        <button
+                            onClick={handleCloseModal}
+                            className="absolute top-4 right-4 text-white bg-red-600 hover:bg-red-700 p-2 rounded-full"
+                        >
+                            &times;
+                        </button>
+                        <img
+                            src={`http://localhost:5000${selectedImage}`}
+                            alt="Selected Hero"
+                            className="w-full h-auto max-h-96 object-contain"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
