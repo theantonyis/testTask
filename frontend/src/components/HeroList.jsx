@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, ChevronRight, ChevronLeft, ChevronRight as ChevronRightArrow, Loader } from 'lucide-react';
+import { PlusCircle, ChevronRight, ChevronLeft, Loader } from 'lucide-react';
 import api from '../api/axios';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6; // Increased to 6 for a better grid layout
 
 function HeroList() {
     const [heroes, setHeroes] = useState([]);
@@ -24,7 +24,7 @@ function HeroList() {
     const pageCount = Math.ceil(heroes.length / ITEMS_PER_PAGE);
 
     return (
-        <div className="max-w-4xl mx-auto p-6 bg-gradient-to-b from-blue-50 to-white rounded-lg shadow-lg">
+        <div className="max-w-6xl mx-auto p-6 bg-gradient-to-b from-blue-50 to-white rounded-lg shadow-lg">
             <header className="mb-8">
                 <h1 className="text-4xl font-bold text-blue-800 mb-4">Superhero Database</h1>
                 <p className="text-gray-600 mb-6">Browse our collection of legendary superheroes</p>
@@ -48,39 +48,49 @@ function HeroList() {
                             <p className="text-gray-600">No heroes found. Add some to get started!</p>
                         </div>
                     ) : (
-                        <ul className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                             {paginated.map(hero => (
-                                <li key={hero.id} className="transform transition-all duration-200 hover:-translate-y-1">
-                                    <Link
-                                        to={`/hero/${hero.id}`}
-                                        className="block bg-white p-5 rounded-lg border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                {hero.images && hero.images.length > 0 && (
-                                                    <img
-                                                        src={`http://localhost:5000/uploads/${hero.images[0]}`}
-                                                        alt={hero.nickname}
-                                                        className="w-16 h-16 object-cover rounded-md border border-gray-200 shadow-sm"
-                                                    />
-                                                )}
-                                                <div>
-                                                    <h3 className="text-xl font-semibold text-blue-700">{hero.nickname}</h3>
-                                                    {hero.real_name && (
-                                                        <p className="text-gray-600 text-sm mt-1">AKA: {hero.real_name}</p>
-                                                    )}
+                                <Link
+                                    key={hero.id}
+                                    to={`/hero/${hero.id}`}
+                                    className="block transform transition-all duration-200 hover:-translate-y-1"
+                                >
+                                    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg border border-gray-200 hover:border-blue-300 h-full flex flex-col">
+                                        <div className="h-36 overflow-hidden bg-gray-100 rounded-t-xl">
+                                        {hero.images && hero.images.length > 0 ? (
+                                                <img
+                                                    src={`http://localhost:5000${hero.images[0]}`}
+                                                    alt={hero.nickname}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-blue-50">
+                                                    <span className="text-blue-300 text-4xl font-bold">{hero.nickname.charAt(0)}</span>
                                                 </div>
-                                            </div>
-                                            <ChevronRightArrow className="h-6 w-6 text-gray-400" />
+                                            )}
                                         </div>
-                                    </Link>
-                                </li>
+                                        <div className="p-5 flex-grow flex flex-col justify-between">
+                                            <div>
+                                                <h3 className="text-xl font-semibold text-blue-700 mb-2">{hero.nickname}</h3>
+                                                {hero.real_name && (
+                                                    <p className="text-gray-600 text-sm">AKA: {hero.real_name}</p>
+                                                )}
+                                            </div>
+                                            <div className="flex justify-end mt-4">
+                                                <span className="inline-flex items-center text-sm font-medium text-blue-600">
+                                                    View Details
+                                                    <ChevronRight className="ml-1 h-4 w-4" />
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
                             ))}
-                        </ul>
+                        </div>
                     )}
 
                     {pageCount > 1 && (
-                        <div className="mt-8 flex justify-center">
+                        <div className="mt-10 flex justify-center">
                             <nav className="inline-flex rounded-md shadow-sm" aria-label="Pagination">
                                 <button
                                     onClick={() => setPage(prev => Math.max(prev - 1, 1))}

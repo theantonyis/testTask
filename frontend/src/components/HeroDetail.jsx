@@ -58,12 +58,12 @@ function HeroDetail() {
                     <ChevronLeft className="h-5 w-5 mr-1" />
                     Back to List
                 </Link>
-                <h1 className="text-3xl font-bold text-blue-800 flex-grow">{hero.nickname}</h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                     <div className="bg-blue-50 p-6 rounded-lg shadow-inner mb-6">
+                        <h1 className="text-3xl font-bold text-blue-800 flex-grow mb-3">{hero.nickname}</h1>
                         <h2 className="text-xl font-semibold text-blue-700 border-b border-blue-200 pb-2 mb-4">Hero Details</h2>
 
                         <div className="space-y-3">

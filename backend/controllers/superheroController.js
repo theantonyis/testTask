@@ -5,7 +5,27 @@ const path = require('path');
 exports.getAllSuperheroes = (req, res) => {
     db.all(`SELECT * FROM superheroes`, [], (err, heroes) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(heroes);
+
+        db.all(`SELECT superhero_id, path FROM images`, [], (err, images) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            // Group images by superhero_id
+            const imageMap = {};
+            images.forEach(img => {
+                if (!imageMap[img.superhero_id]) {
+                    imageMap[img.superhero_id] = [];
+                }
+                imageMap[img.superhero_id].push(`/uploads/${img.path}`);
+            });
+
+            // Attach images to each hero
+            const heroesWithImages = heroes.map(hero => ({
+                ...hero,
+                images: imageMap[hero.id] || [],
+            }));
+
+            res.json(heroesWithImages);
+        });
     });
 };
 

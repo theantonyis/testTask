@@ -9,6 +9,7 @@ function HeroForm({ edit }) {
     const [loading, setLoading] = useState(edit);
     const [submitting, setSubmitting] = useState(false);
     const [previewImages, setPreviewImages] = useState([]);
+    const [existingImages, setExistingImages] = useState([]);
     const [form, setForm] = useState({
         nickname: '',
         real_name: '',
@@ -23,8 +24,9 @@ function HeroForm({ edit }) {
         if (edit && id) {
             api.get(`/superheroes/${id}`)
                 .then(res => {
-                    const { nickname, real_name, origin_description, superpowers, catch_phrase } = res.data;
+                    const { nickname, real_name, origin_description, superpowers, catch_phrase, images } = res.data;
                     setForm({ nickname, real_name, origin_description, superpowers, catch_phrase });
+                    setExistingImages(images || []);
                 })
                 .catch(err => {
                     console.error('Error fetching hero data:', err);
@@ -33,6 +35,7 @@ function HeroForm({ edit }) {
                 .finally(() => setLoading(false));
         }
     }, [edit, id]);
+
 
     const handleChange = e => {
         const { name, value } = e.target;
@@ -109,10 +112,10 @@ function HeroForm({ edit }) {
                     <ChevronLeft className="h-5 w-5 mr-1" />
                     Back to List
                 </Link>
-                <h1 className="text-3xl font-bold text-blue-800 flex-grow">{edit ? 'Edit Superhero' : 'Create New Superhero'}</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                <h1 className="text-3xl font-bold text-blue-800 flex-grow">{edit ? 'Edit Superhero' : 'Create New Superhero'}</h1>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-6">
                         <div>
@@ -220,6 +223,31 @@ function HeroForm({ edit }) {
                 </div>
 
                 {/* Image Previews */}
+                {existingImages.length > 0 && (
+                    <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Images:</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {existingImages.map((imgUrl, idx) => (
+                                <div key={idx} className="relative">
+                                    <img
+                                        src={imgUrl}
+                                        alt={`Existing ${idx + 1}`}
+                                        className="h-24 w-full object-cover rounded-md"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setExistingImages(prev => prev.filter((_, i) => i !== idx));
+                                        }}
+                                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                    >
+                                        <XCircle size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 {previewImages.length > 0 && (
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
