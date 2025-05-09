@@ -3,25 +3,31 @@ import { Link } from 'react-router-dom';
 import { PlusCircle, ChevronRight, ChevronLeft, Loader } from 'lucide-react';
 import api from '../api/axios';
 
-const ITEMS_PER_PAGE = 6; // Increased to 6 for a better grid layout
+const ITEMS_PER_PAGE_OPTIONS = [6, 10, 12, 15, 20]; // Different page size options
 
 function HeroList() {
     const [heroes, setHeroes] = useState([]);
     const [page, setPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(6); // Default items per page
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         setLoading(true);
+        setError(null); // Reset error state on new API request
         api.get('/superheroes')
             .then(res => setHeroes(res.data))
-            .catch(err => console.error('Error fetching heroes:', err))
+            .catch(err => {
+                console.error('Error fetching heroes:', err);
+                setError('Failed to load superheroes. Please try again later.');
+            })
             .finally(() => setLoading(false));
     }, []);
 
     const paginated = Array.isArray(heroes)
-        ? heroes.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+        ? heroes.slice((page - 1) * itemsPerPage, page * itemsPerPage)
         : [];
-    const pageCount = Math.ceil(heroes.length / ITEMS_PER_PAGE);
+    const pageCount = Math.ceil(heroes.length / itemsPerPage);
 
     return (
         <div className="max-w-6xl mx-auto p-6 bg-gradient-to-b from-blue-50 to-white rounded-lg shadow-lg">
@@ -41,6 +47,10 @@ function HeroList() {
                 <div className="flex justify-center items-center h-64">
                     <Loader className="h-12 w-12 text-blue-500 animate-spin" />
                 </div>
+            ) : error ? (
+                <div className="text-center p-8 bg-red-50 rounded-lg">
+                    <p className="text-red-600">{error}</p>
+                </div>
             ) : (
                 <>
                     {heroes.length === 0 ? (
@@ -57,7 +67,7 @@ function HeroList() {
                                 >
                                     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg border border-gray-200 hover:border-blue-300 h-full flex flex-col">
                                         <div className="h-36 overflow-hidden bg-gray-100 rounded-t-xl">
-                                        {hero.images && hero.images.length > 0 ? (
+                                            {hero.images && hero.images.length > 0 ? (
                                                 <img
                                                     src={`http://localhost:5000${hero.images[0]}`}
                                                     alt={hero.nickname}
@@ -79,7 +89,7 @@ function HeroList() {
                                             <div className="flex justify-end mt-4">
                                                 <span className="inline-flex items-center text-sm font-medium text-blue-600">
                                                     View Details
-                                                    <ChevronRight className="ml-1 h-4 w-4" />
+                                                    <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
                                                 </span>
                                             </div>
                                         </div>
@@ -90,7 +100,7 @@ function HeroList() {
                     )}
 
                     {pageCount > 1 && (
-                        <div className="mt-10 flex justify-center">
+                        <div className="mt-10 flex justify-between items-center">
                             <nav className="inline-flex rounded-md shadow-sm" aria-label="Pagination">
                                 <button
                                     onClick={() => setPage(prev => Math.max(prev - 1, 1))}

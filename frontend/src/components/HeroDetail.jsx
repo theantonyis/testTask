@@ -9,6 +9,8 @@ function HeroDetail() {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,6 +31,16 @@ function HeroDetail() {
             setDeleting(false);
             setShowConfirmation(false);
         }
+    };
+
+    const handleImageClick = (src) => {
+        setSelectedImage(src);
+        setShowImageModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowImageModal(false);
+        setSelectedImage('');
     };
 
     if (loading) {
@@ -113,11 +125,15 @@ function HeroDetail() {
                     {hero.images && hero.images.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4">
                             {hero.images.map((src, i) => (
-                                <div key={i} className="overflow-hidden rounded-lg shadow-md border border-gray-200 bg-gray-100">
+                                <div
+                                    key={i}
+                                    className="overflow-hidden rounded-lg shadow-md border border-gray-200 bg-gray-100"
+                                    onClick={() => handleImageClick(src)}
+                                >
                                     <img
                                         src={`http://localhost:5000${src}`}
                                         alt={hero.nickname}
-                                        className="w-full h-auto max-h-64 object-contain rounded-lg transition-transform duration-300 hover:scale-105"
+                                        className="w-full h-auto max-h-64 object-contain rounded-lg transition-transform duration-300 hover:scale-105 cursor-pointer"
                                     />
                                 </div>
                             ))}
@@ -131,7 +147,6 @@ function HeroDetail() {
                 </div>
             </div>
 
-            {/* Delete Confirmation Dialog */}
             {showConfirmation && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
@@ -153,6 +168,24 @@ function HeroDetail() {
                                 {deleting ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showImageModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="relative p-4 bg-white rounded-lg max-w-lg w-full">
+                        <button
+                            onClick={handleCloseModal}
+                            className="absolute top-4 right-4 text-white bg-red-600 hover:bg-red-700 p-2 rounded-full"
+                        >
+                            &times;
+                        </button>
+                        <img
+                            src={`http://localhost:5000${selectedImage}`}
+                            alt="Selected Hero"
+                            className="w-full h-auto max-h-96 object-contain"
+                        />
                     </div>
                 </div>
             )}

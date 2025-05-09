@@ -71,7 +71,7 @@ function HeroForm({ edit }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
@@ -79,9 +79,15 @@ function HeroForm({ edit }) {
         setSubmitting(true);
         const formData = new FormData();
 
-        Object.entries(form).forEach(([k, v]) => formData.append(k, v));
-        for (let f of files) formData.append('images', f);
+        // Append form fields to the formData
+        Object.entries(form).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
 
+        // Append selected files (images) to the formData
+        files.forEach((file) => formData.append("images", file));
+
+        // If editing, append the existing images (make sure this is correct on your backend)
         if (edit) {
             formData.append('existingImages', JSON.stringify(existingImages));
         }
@@ -89,15 +95,16 @@ function HeroForm({ edit }) {
         try {
             const method = edit ? api.put : api.post;
             const endpoint = edit ? `/superheroes/${id}` : '/superheroes';
-            const response = await method(endpoint, formData);
 
-            // Clean up preview image URLs
-            previewImages.forEach(URL.revokeObjectURL);
+            // Submit the form data (including images)
+            await method(endpoint, formData);
 
+            // Cleanup and redirect
+            previewImages.forEach((preview) => URL.revokeObjectURL(preview));
             navigate('/', {
                 state: {
-                    message: edit ? 'Hero updated successfully' : 'Hero created successfully'
-                }
+                    message: edit ? 'Hero updated successfully' : 'Hero created successfully',
+                },
             });
         } catch (error) {
             console.error('Error saving hero:', error);
@@ -231,7 +238,6 @@ function HeroForm({ edit }) {
                     </div>
                 </div>
 
-                {/* Image Previews */}
                 {existingImages.length > 0 && (
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Images:</h3>
@@ -258,7 +264,6 @@ function HeroForm({ edit }) {
                     </div>
                 )}
 
-                {/* Image Previews */}
                 {previewImages.length > 0 && (
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
