@@ -1,118 +1,120 @@
-import React, { useState } from "react";
-import { Eye, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { PlusCircle, ChevronRight, ChevronLeft, ChevronRight as ChevronRightArrow, Loader } from 'lucide-react';
+import api from '../api/axios';
 
-function HeroList({ heroes = [], onEdit, onDelete, onView }) {
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+const ITEMS_PER_PAGE = 5;
 
-    // Pagination logic
-    const indexOfLastHero = currentPage * itemsPerPage;
-    const indexOfFirstHero = indexOfLastHero - itemsPerPage;
-    const currentHeroes = heroes.slice(indexOfFirstHero, indexOfLastHero);
+function HeroList() {
+    const [heroes, setHeroes] = useState([]);
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(true);
 
-    const totalPages = Math.ceil(heroes.length / itemsPerPage);
+    useEffect(() => {
+        setLoading(true);
+        api.get('/superheroes')
+            .then(res => setHeroes(res.data))
+            .catch(err => console.error('Error fetching heroes:', err))
+            .finally(() => setLoading(false));
+    }, []);
 
-    const handleView = (hero) => {
-        if (typeof onView === 'function') {
-            onView(hero);
-        } else {
-            alert(`Hero Details: ${hero.nickname} (${hero.real_name})`);
-        }
-    };
+    const paginated = Array.isArray(heroes)
+        ? heroes.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+        : [];
+    const pageCount = Math.ceil(heroes.length / ITEMS_PER_PAGE);
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="grid grid-cols-1 gap-4">
-                {currentHeroes.map(hero => (
-                    <div key={hero.id} className="border rounded-lg overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-shadow">
-                        <div className="w-full md:w-1/4 h-40">
-                            {hero.image ? (
-                                <img
-                                    src={`http://localhost:5000${hero.image}`}
-                                    alt={hero.nickname}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : hero.images?.length > 0 ? (
-                                <img
-                                    src={hero.images[0]}
-                                    alt={hero.nickname}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
-                                    No Image
-                                </div>
-                            )}
-                        </div>
+        <div className="max-w-4xl mx-auto p-6 bg-gradient-to-b from-blue-50 to-white rounded-lg shadow-lg">
+            <header className="mb-8">
+                <h1 className="text-4xl font-bold text-blue-800 mb-4">Superhero Database</h1>
+                <p className="text-gray-600 mb-6">Browse our collection of legendary superheroes</p>
+                <Link
+                    to="/add"
+                    className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+                >
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Add New Hero
+                </Link>
+            </header>
 
-                        <div className="p-4 flex-1 flex flex-col justify-between">
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-800">{hero.nickname}</h3>
-                                <p className="text-gray-600">Real name: {hero.real_name}</p>
-                                <p className="text-gray-500 mt-2 line-clamp-2">{hero.origin_description}</p>
-                            </div>
-
-                            <div className="flex justify-end gap-2 mt-4">
-                                <button
-                                    onClick={() => handleView(hero)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                                    title="View details"
-                                >
-                                    <Eye size={18} />
-                                </button>
-                                <button
-                                    onClick={() => onEdit?.(hero)}
-                                    className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
-                                    title="Edit hero"
-                                >
-                                    <Edit size={18} />
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (window.confirm(`Are you sure you want to delete ${hero.nickname}?`)) {
-                                            onDelete?.(hero.id);
-                                        }
-                                    }}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                                    title="Delete hero"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-
-                {heroes.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                        No superheroes found. Add your first hero!
-                    </div>
-                )}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex justify-center mt-6">
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className={`p-2 rounded-l-lg border ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                    >
-                        <ChevronLeft size={18} />
-                    </button>
-
-                    <div className="border-t border-b px-4 flex items-center bg-white">
-                        Page {currentPage} of {totalPages}
-                    </div>
-
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className={`p-2 rounded-r-lg border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                    >
-                        <ChevronRight size={18} />
-                    </button>
+            {loading ? (
+                <div className="flex justify-center items-center h-64">
+                    <Loader className="h-12 w-12 text-blue-500 animate-spin" />
                 </div>
+            ) : (
+                <>
+                    {heroes.length === 0 ? (
+                        <div className="text-center p-8 bg-gray-50 rounded-lg">
+                            <p className="text-gray-600">No heroes found. Add some to get started!</p>
+                        </div>
+                    ) : (
+                        <ul className="space-y-3">
+                            {paginated.map(hero => (
+                                <li key={hero.id} className="transform transition-all duration-200 hover:-translate-y-1">
+                                    <Link
+                                        to={`/hero/${hero.id}`}
+                                        className="block bg-white p-5 rounded-lg border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-4">
+                                                {hero.images && hero.images.length > 0 && (
+                                                    <img
+                                                        src={`http://localhost:5000/uploads/${hero.images[0]}`}
+                                                        alt={hero.nickname}
+                                                        className="w-16 h-16 object-cover rounded-md border border-gray-200 shadow-sm"
+                                                    />
+                                                )}
+                                                <div>
+                                                    <h3 className="text-xl font-semibold text-blue-700">{hero.nickname}</h3>
+                                                    {hero.real_name && (
+                                                        <p className="text-gray-600 text-sm mt-1">AKA: {hero.real_name}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <ChevronRightArrow className="h-6 w-6 text-gray-400" />
+                                        </div>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    {pageCount > 1 && (
+                        <div className="mt-8 flex justify-center">
+                            <nav className="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+                                <button
+                                    onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={page === 1}
+                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    <span className="sr-only">Previous</span>
+                                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                                {Array.from({ length: pageCount }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setPage(i + 1)}
+                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                            page === i + 1
+                                                ? 'z-10 bg-blue-600 text-white border-blue-600'
+                                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setPage(prev => Math.min(prev + 1, pageCount))}
+                                    disabled={page === pageCount}
+                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    <span className="sr-only">Next</span>
+                                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                            </nav>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
