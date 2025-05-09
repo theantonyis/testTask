@@ -65,7 +65,7 @@ The project is divided into two main parts:
    npm run dev
    ```
 
-4. The frontend application will run on http://localhost:5173 (or another port if 5173 is in use)
+4. The frontend application will run on http://localhost:3000 (or another port if 3000 is in use)
 
 ## API Endpoints
 

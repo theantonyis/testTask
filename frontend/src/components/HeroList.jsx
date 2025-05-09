@@ -3,18 +3,16 @@ import { Link } from 'react-router-dom';
 import { PlusCircle, ChevronRight, ChevronLeft, Loader } from 'lucide-react';
 import api from '../api/axios';
 
-const ITEMS_PER_PAGE_OPTIONS = [6, 10, 12, 15, 20]; // Different page size options
-
 function HeroList() {
     const [heroes, setHeroes] = useState([]);
     const [page, setPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(6); // Default items per page
+    const [itemsPerPage] = useState(5);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         setLoading(true);
-        setError(null); // Reset error state on new API request
+        setError(null);
         api.get('/superheroes')
             .then(res => setHeroes(res.data))
             .catch(err => {

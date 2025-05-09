@@ -27,11 +27,10 @@ function HeroForm({ edit }) {
                     const { nickname, real_name, origin_description, superpowers, catch_phrase, images } = res.data;
                     setForm({ nickname, real_name, origin_description, superpowers, catch_phrase });
 
-                    // Ensure images is an array
                     if (Array.isArray(images)) {
                         setExistingImages(images);
                     } else {
-                        setExistingImages([]); // or set it to a default value if images is not an array
+                        setExistingImages([]);
                     }
                 })
                 .catch(err => {
@@ -46,7 +45,6 @@ function HeroForm({ edit }) {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
 
-        // Clear validation error when field is updated
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: null }));
         }
@@ -56,7 +54,6 @@ function HeroForm({ edit }) {
         const selectedFiles = Array.from(e.target.files);
         setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
 
-        // Create preview URLs for the new files
         const previews = selectedFiles.map(file => URL.createObjectURL(file));
         setPreviewImages(prevPreviews => [...prevPreviews, ...previews]);
     };
@@ -79,15 +76,12 @@ function HeroForm({ edit }) {
         setSubmitting(true);
         const formData = new FormData();
 
-        // Append form fields to the formData
         Object.entries(form).forEach(([key, value]) => {
             formData.append(key, value);
         });
 
-        // Append selected files (images) to the formData
         files.forEach((file) => formData.append("images", file));
 
-        // If editing, append the existing images (make sure this is correct on your backend)
         if (edit) {
             formData.append('existingImages', JSON.stringify(existingImages));
         }
@@ -96,10 +90,8 @@ function HeroForm({ edit }) {
             const method = edit ? api.put : api.post;
             const endpoint = edit ? `/superheroes/${id}` : '/superheroes';
 
-            // Submit the form data (including images)
             await method(endpoint, formData);
 
-            // Cleanup and redirect
             previewImages.forEach((preview) => URL.revokeObjectURL(preview));
             navigate('/', {
                 state: {
@@ -245,7 +237,7 @@ function HeroForm({ edit }) {
                             {existingImages.map((imgUrl, idx) => (
                                 <div key={idx} className="relative">
                                     <img
-                                        src={`http://localhost:5000${imgUrl}`} // Ensure imgUrl contains correct path like '/uploads/hero-image.jpg'
+                                        src={`http://localhost:5000${imgUrl}`}
                                         alt={`Existing ${idx + 1}`}
                                         className="h-48 w-full object-cover rounded-md"
                                     />
